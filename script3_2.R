@@ -44,23 +44,22 @@ typeof(notas_discreta)
 notas_calc <- df_test3 %>%
             filter(Nome_Disciplina == 'CALCULO DIFERENCIAL E INTEGRAL I') %>%
             group_by(Matricula) %>%
+            drop_na(Media_Disciplina) %>%
             summarise(media = mean(Media_Disciplina)) %>%
-            drop_na(media)
 print(notas_calc)
 #print(notas_calc[which(notas_calc$Matricula=='B10018'), ])
 
 notas_md <- df_test3 %>%
               filter(Nome_Disciplina == 'MATEMÁTICA DISCRETA') %>%
               group_by(Matricula) %>%
+              drop_na(Media_Disciplina) %>%
               summarise(media = mean(Media_Disciplina)) %>%
-              drop_na(media)
-#print(notas_md[which(notas_md$Matricula=='B10018'), ])
+#print(notas_md[which(notas_md$Matricula=='B11671'), ])
 print(notas_md)
 
-final_df <- notas_md %>% full_join(notas_calc, by='Matricula')
-#%>%
-#              filter(!is.null(media.y) & !is.null(media.x)) %>%
-#              drop_na()
+final_df <- notas_calc %>% full_join(notas_md, by='Matricula') %>%
+              drop_na(media.y) %>%
+              filter(!is.null(media.y) & !is.null(media.x)) %>%
 print(final_df)
 
 notas_mod1 = lm(final_df$media.x ~ final_df$media.y, data = final_df)
@@ -74,4 +73,4 @@ by_student_nn <- summarise(by_student,
 print(by_student_nn)
 
 stds_2_disciplines <- filter(by_student_nn, count > 1)
-print(stds_2_disciplines)
+count(stds_2_disciplines)
