@@ -17,7 +17,7 @@ library(plyr)
 
 setwd('~/workspaces/analytics2/')
 
-df <- read.csv('Tarefa2/graduados_model.csv')  
+df <- read.csv('Tarefa2/graduados_model.csv', sep=' ')  
 
 head(df)
 
