@@ -24,10 +24,6 @@ df <- read.csv('Tarefa2/graduados_model.csv', sep=' ')
 head(df)
 View(df)
 
-# library(outliers)
-# 
-# outlier(df[2:ncol(df)])
-# rm.outlier(df[2:ncol(df)])
 
 # -----------------------------------------------------------------------------------
 
@@ -102,7 +98,7 @@ plot(final_model)
 #                   0.10241 * Leitura.e.Produção.de.Textos + 
 #                   0.30538 * Programação.II +
 #                   0.21886 * Matemática.Discreta +
-#                   0.09098 * Teoria.dos.Grafos
+#                   0.09098 * Teoria.dos.Grafos +
 #                   1.15308
 #
 #         Como se observa, apenas cinco disciplinas são realmente significativas
@@ -139,8 +135,45 @@ summary(final_model)
 plot(model.p1.p2)
 plot(final_model)
 
+# ----------------------------------------------------------------------------------------------
+# Analise de correlacao
+
+sub.df <- subset(df, select = c(Matemática.Discreta, 
+                   Programação.II,
+                   Teoria.dos.Grafos,
+                   Leitura.e.Produção.de.Textos,
+                   Álgebra.Vetorial.e.Geometria.Analítica,
+                   cra))
+head(sub.df)
+View(sub.df)
+
+library(GGally)
+
+my_fn <- function(data, mapping, ...){
+  p <- ggplot(data = data, mapping = mapping) + 
+    geom_point() + 
+    geom_smooth(method=loess, fill="red", color="red", ...) +
+    geom_smooth(method=lm, fill="blue", color="blue", ...)
+  p
+}
+
+g = ggpairs(sub.df, columns = 1:6, lower = list(continuous = my_fn))
+g
+
+# ---------------------------------------------------------------------------------------------
+
+plot(lm(sub.df$cra ~ sub.df$Matemática.Discreta))
+plot(lm(sub.df$cra ~ sub.df$Leitura.e.Produção.de.Textos))
+plot(lm(sub.df$cra ~ sub.df$Programação.II))
+plot(lm(sub.df$cra ~ sub.df$Álgebra.Vetorial.e.Geometria.Analítica))
+plot(lm(sub.df$cra ~ sub.df$Teoria.dos.Grafos))
+
+
 # d) Analise os plots de resíduos de cada variável e veja se algum (um ou mais) 
-#       deles indica não aleatoriedade dos erros.
+#      deles indica não aleatoriedade dos erros.
+#      
+#       Pela análise dos plots feitos acima, vê se que os erros estão distribuídos de forma
+#     bastante aleatória, indicando randomicidade.
 
 # ---------------------------------------------------------------------------------------------
 
@@ -167,14 +200,14 @@ summary(model.p2)
 #    Como se observar nos resultados dos comandos acima, para o modelo 1,
 #     que considera apenas as disciplinas do 1 periodo, nós temos a seguinte
 #     configuração:
-#        p-valor = 1.954e-10
-#        F-statistic = 13.43
-#        Adjusted R-squared = 0.4673
+#        p-valor = 7.158e-11
+#        F-statistic = 14.15
+#        Adjusted R-squared = 0.4813
 #     Já para o modelo 2, o qual considera apenas as disciplinas do 2o periodo, nós
 #     temos a seguinte configuração:
-#        p-valor = 3.458e-10
-#        F-statistic = 13.03
-#        Adjusted R-squared = 0.4592
+#        p-valor = 5.767e-16
+#        F-statistic = 23.99
+#        Adjusted R-squared = 0.6187
 #     Portanto, o modelo 1 descreve/prever melhor o cra do aluno para o curso como
 #     um todo.
 
@@ -183,9 +216,21 @@ summary(model.p2)
 # f) Use o modelo para predizer o seu próprio desempenho e compare a predição 
 #       com o seu CRA atual. Comente o resultado.
 #     Fórmula do modelo: 
-#       cra = 1.067e-15 * Programação.II + -1.094e-15 * Matemática.Discreta + 7.24
+#       cra = 0.09881 * Álgebra.Vetorial.e.Geometria.Analítica + 
+#                   0.10241 * Leitura.e.Produção.de.Textos + 
+#                   0.30538 * Programação.II +
+#                   0.21886 * Matemática.Discreta +
+#                   0.09098 * Teoria.dos.Grafos +
+#                   1.15308
 #
-#       Programacao.II = 8.2
-#       Matematica.Discreta = 7.9
-#       cra estimado = 7,24
+#       Programacao.II = 8,2
+#       Matematica.Discreta = 7,9
+#       Albegra.Vetorial.e.Geometria.Analitica = 7,0
+#       Teoria.dos.Grafos = 10,0
+#       Leitura.e.Producao.de.Textos = 7,4
+#       cra estimado = 7,745494
 #       cra correto = 7,80
+#
+#       O modelo apresenta um erro de 0,054506 pontos na predição do cra. O resultado se mostra
+#     satisfatório, uma vez que o erro é bastante pequeno.
+#
