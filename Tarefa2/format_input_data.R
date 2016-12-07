@@ -1,10 +1,8 @@
 
+setwd('~/Desktop/Link to AD2/analytics2')
+
 library(readr)
 library(dplyr)
-library(plyr)
-
-setwd('~/workspaces/analytics2')
-
 graduados <- read_csv("Tarefa2/graduados.csv", col_types = cols(matricula = col_character())) %>%
   mutate(matricula = as.factor(matricula))
 head(graduados)
@@ -31,6 +29,7 @@ graduados.cra <- graduados.clean %>%
 head(graduados.cra)
 
 library(reshape2)
+library(tidyr)
 
 graduados.model.input <- graduados.clean %>%
   group_by(matricula,disciplina)  %>%
@@ -40,7 +39,8 @@ graduados.model.input <- graduados.clean %>%
   mutate(disciplina = as.factor(gsub(" ",".",disciplina))) %>%
   dcast(matricula ~ disciplina, mean) %>%
   merge(graduados.cra) %>%
-  filter(!is.na())
+  #filter(!is.na(graduados.cra))
+  drop_na()
 
 head(graduados.model.input)
 View(graduados.model.input)
