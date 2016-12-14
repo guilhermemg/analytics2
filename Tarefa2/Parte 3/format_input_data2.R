@@ -7,7 +7,8 @@ library(readr)
 library(dplyr)
 library(plyr)
 
-setwd('~/Desktop/Link to AD2/analytics2')
+#setwd('~/Desktop/Link to AD2/analytics2')
+setwd('~/workspaces/analytics2')
 
 X <- read_csv("Tarefa2/Parte 3/graduados_treino.csv", col_types = cols(ALU_NOVAMATRICULA = col_character()))
 X

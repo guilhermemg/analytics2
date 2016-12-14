@@ -194,7 +194,15 @@ sqrt(mean(lasso2.pred - adapted.graduados.teste$cra)^2)
 # -----------------------------------------------------------------------------------------------------------
 # 8. Use o modelo treinado em 6 e aplique nos dados de teste que vamos disponibilizar.
 
-treino.mais.teste <- rbind(adapted.graduados.teste, adapted.graduados.treino)
+novo.graduados.treino <-read.csv('Parte 3/graduados_treino_2016.csv')
+head(novo.graduados.treino)
+
+rownames(novo.graduados.treino) <- novo.graduados.treino$matricula
+novo.graduados.treino$matricula <- NULL
+
+treino.mais.teste <- rbind(adapted.graduados.teste, novo.graduados.treino)
+
+treino.mais.teste <- treino.mais.teste %>% tidyr::drop_na()
 
 # Melhor modelo encontrado foi o linear: lmfit
 
@@ -239,3 +247,55 @@ sqrt(mean(novo.lasso.pred - novo.teste$cra)^2)
 # RSME = 0.4819051
 
 varImp(novo.lasso)
+
+# ----------------------------------------------------------------------------------------
+# 10. Gerar dados para subir para o kaggle
+
+
+novo.graduados.teste <-read.csv('Parte 3/graduados_teste_2016.csv')
+head(novo.graduados.teste)
+nrow(novo.graduados.teste)
+
+rownames(novo.graduados.teste) <- novo.graduados.teste$matricula
+novo.graduados.teste$matricula <- NULL
+
+novo.graduados.teste
+
+treino.mais.teste2 <- rbind(adapted.graduados.teste, novo.graduados.teste)
+treino.mais.teste2 <- treino.mais.teste %>% tidyr::drop_na()
+
+# Melhor modelo encontrado foi o linear: lmfit
+
+lmfit.final <- train(cra ~., data = treino.mais.teste2,
+               method='lm',
+               trControl = fitControl,
+               preProc=c('scale', 'center'))
+lmfit.final
+
+# RMSE (linear)(treino) = 0.4822897
+# Rsquared (linear)(treino) = 0.6078953
+
+coef(lmfit.final$finalModel)
+
+lmfit.final.pred <- predict(lmfit.final, treino.mais.teste)
+
+sqrt(mean(lmfit.final.pred - treino.mais.teste2$cra)^2)
+
+head(treino.mais.teste2)
+
+rnames <- rownames(treino.mais.teste2)
+treino.mais.teste2$matricula = rnames
+head(treino.mais.teste2)
+nrow(treino.mais.teste2)
+
+treino.mais.teste2 <- treino.mais.teste2 %>% 
+  group_by(matricula) %>%
+  select(cra)
+
+head(treino.mais.teste2)
+nrow(treino.mais.teste2)
+
+write.table(treino.mais.teste2, "Tarefa2/Parte 3/treino_mais_teste2.csv")
+
+#colnames(treino.mais.teste2) = c("matricula", "cra")
+#head(treino.mais.teste2)
