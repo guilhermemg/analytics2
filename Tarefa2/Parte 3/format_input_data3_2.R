@@ -9,7 +9,7 @@ library(plyr)
 
 setwd('~/Desktop/Link to AD2/analytics2')
 
-X <- read_csv("Tarefa2/Parte 3/graduados_treino.csv", col_types = cols(ALU_NOVAMATRICULA = col_character()))
+X <- read_csv("Tarefa2/Parte 3/graduados_teste.csv", col_types = cols(ALU_NOVAMATRICULA = col_character()))
 X
 
 graduados <- X  %>%
@@ -52,4 +52,4 @@ graduados.model.input2 <- graduados.clean %>%
 head(graduados.model.input2)
 View(graduados.model.input2)
 
-write.table(graduados.model.input2, 'Tarefa2/Parte 3/graduados_treino_model2.csv')
+write.table(graduados.model.input2, 'Tarefa2/Parte 3/graduados_teste_model2.csv')

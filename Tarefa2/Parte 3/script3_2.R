@@ -19,19 +19,19 @@ library(dplyr)
 
 adapted.graduados.treino <- graduados.treino %>%
   select(Cálculo.Diferencial.e.Integral.I,
-           Álgebra.Vetorial.e.Geometria.Analítica,
-           Programação.I,
-           Introdução.à.Computação,
-           Leitura.e.Produção.de.Textos,
-           Laboratório.de.Programação.I,
-           Programação.II, 
-           Cálculo.Diferencial.e.Integral.II,
-           Matemática.Discreta,
-           Laboratório.de.Programação.II,
-           Teoria.dos.Grafos,
-           Fundamentos.de.Física.Clássica,
-           cra,
-           ALU_NOVAMATRICULA)
+         Álgebra.Vetorial.e.Geometria.Analítica,
+         Programação.I,
+         Introdução.à.Computação,
+         Leitura.e.Produção.de.Textos,
+         Laboratório.de.Programação.I,
+         Programação.II, 
+         Cálculo.Diferencial.e.Integral.II,
+         Matemática.Discreta,
+         Laboratório.de.Programação.II,
+         Teoria.dos.Grafos,
+         Fundamentos.de.Física.Clássica,
+         cra,
+         ALU_NOVAMATRICULA)
 rownames(adapted.graduados.treino) <- adapted.graduados.treino$ALU_NOVAMATRICULA
 adapted.graduados.treino$ALU_NOVAMATRICULA <- NULL
 
@@ -132,7 +132,7 @@ plot(varImp(ridge))
 
 set.seed(825) # for reproducing these results
 lasso2 <- train(cra ~., adapted.graduados.treino,
-               method='lasso')
+                method='lasso')
 lasso2
 # lambda encontrado: 0.5
 
