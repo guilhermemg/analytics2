@@ -1,0 +1,92 @@
+---
+title: "format_input_data - Tarefa 3"
+output: html_document
+author: Guilherme Gadelha
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# format input data - Tarefa 3
+
+## Importa bibliotecas e seta o working directory
+
+```{r}
+
+library(readr)
+library(dplyr)
+
+setwd("~/Desktop/Link to AD2/analytics2/Tarefa3")
+```
+
+
+```{r}
+alunos <- read_csv("alunosUFCGAnon.csv", col_types = cols(Matricula = col_character())) %>%
+  mutate(Matricula = as.factor(Matricula))
+head(alunos)
+
+nrow(alunos)
+```
+
+## Remove colunas desnecessárias e seleciona os alunos de computação
+```{r}
+alunos.clean <- alunos %>%
+  select(-Departamento, -Situacao, -Centro, -Campus, -Creditos_Curso, -Periodo_Ingresso, -Periodo_Relativo, -Nome_Curso, -Cod_Disciplina) %>%
+  filter(Cod_Curso == 14102100) %>%
+  filter(Tipo == "Obrigatória")
+
+nrow(alunos.clean)
+head(alunos.clean)
+#View(alunos.clean)
+```
+
+
+## Remove alunos com Media_Disciplina com valor null
+```{r}
+alunos.clean <- alunos.clean %>%
+  filter(!is.na(alunos.clean$Media_Disciplina))
+head(alunos.clean)
+```
+
+
+## Calcula CRA de alunos
+```{r}
+alunos.cra <- alunos.clean %>%
+  group_by(Matricula) %>%
+  mutate(cra.contrib = Media_Disciplina * Creditos) %>%
+  summarise(cra = sum(cra.contrib)/sum(Creditos))
+
+head(alunos.cra)
+#View(alunos.cra)
+```
+
+
+## Organiza os dados de maneira que as disciplinas fiquem como colunas
+```{r}
+library(reshape2)
+library(tidyr)
+
+alunos.model.input <- alunos.clean %>%
+  group_by(Matricula, Nome_Disciplina)  %>%
+  filter(Media_Disciplina == max(Media_Disciplina)) %>%
+  ungroup() %>%
+  select(Matricula,Nome_Disciplina,Media_Disciplina) %>% 
+  mutate(Nome_Disciplina = as.factor(gsub(" ",".",Nome_Disciplina))) %>%
+  dcast(Matricula ~ Nome_Disciplina, mean) %>%
+  merge(alunos.cra) %>%
+  ##filter(!is.na(graduados.cra))
+  drop_na()
+
+head(alunos.model.input)
+View(alunos.model.input)
+
+```
+
+## Escreve dados limpos e organizados para arquivo .csv
+```{r}
+write.table(graduados.model.input, 'Tarefa3/alunos_clean.csv')
+```
+
+
+

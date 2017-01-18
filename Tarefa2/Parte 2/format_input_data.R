@@ -3,7 +3,7 @@ setwd('~/Desktop/Link to AD2/analytics2')
 
 library(readr)
 library(dplyr)
-graduados <- read_csv("Tarefa2/graduados.csv", col_types = cols(matricula = col_character())) %>%
+graduados <- read_csv("Tarefa2/Parte 2/graduados.csv", col_types = cols(matricula = col_character())) %>%
   mutate(matricula = as.factor(matricula))
 head(graduados)
 

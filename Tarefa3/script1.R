@@ -1,8 +1,10 @@
 
-# script 3_1 tarefa 2
+# script 3_1 tarefa 3
 
-#setwd('~/Desktop/Link to AD2/analytics2/Tarefa2')
-setwd('~/workspaces/analytics2/Tarefa2')
+# regressão logística
+
+setwd('~/Desktop/Link to AD2/analytics2/Tarefa3')
+#setwd('~/workspaces/analytics2/Tarefa3')
 
 # --------------------------------------------------------------------------------------------------------------------
 #  1. Baixe os dados de treino e teste.
@@ -20,19 +22,19 @@ library(dplyr)
 
 adapted.graduados.treino <- graduados.treino %>%
   select(Cálculo.Diferencial.e.Integral.I,
-           Álgebra.Vetorial.e.Geometria.Analítica,
-           Programação.I,
-           Introdução.à.Computação,
-           Leitura.e.Produção.de.Textos,
-           Laboratório.de.Programação.I,
-           Programação.II, 
-           Cálculo.Diferencial.e.Integral.II,
-           Matemática.Discreta,
-           Laboratório.de.Programação.II,
-           Teoria.dos.Grafos,
-           Fundamentos.de.Física.Clássica,
-           cra,
-           ALU_NOVAMATRICULA)
+         Álgebra.Vetorial.e.Geometria.Analítica,
+         Programação.I,
+         Introdução.à.Computação,
+         Leitura.e.Produção.de.Textos,
+         Laboratório.de.Programação.I,
+         Programação.II, 
+         Cálculo.Diferencial.e.Integral.II,
+         Matemática.Discreta,
+         Laboratório.de.Programação.II,
+         Teoria.dos.Grafos,
+         Fundamentos.de.Física.Clássica,
+         cra,
+         ALU_NOVAMATRICULA)
 rownames(adapted.graduados.treino) <- adapted.graduados.treino$ALU_NOVAMATRICULA
 adapted.graduados.treino$ALU_NOVAMATRICULA <- NULL
 
@@ -231,9 +233,9 @@ novo.teste <- adapted.graduados.teste %>%
 
 
 novo.lasso <- train(cra ~., novo.treino,
-               method='lasso',
-               preProc=c('scale','center'),
-               trControl=fitControl)
+                    method='lasso',
+                    preProc=c('scale','center'),
+                    trControl=fitControl)
 novo.lasso
 
 # lambda = 0.9
@@ -267,9 +269,9 @@ treino.mais.teste2 <- treino.mais.teste %>% tidyr::drop_na()
 # Melhor modelo encontrado foi o linear: lmfit
 
 lmfit.final <- train(cra ~., data = treino.mais.teste2,
-               method='lm',
-               trControl = fitControl,
-               preProc=c('scale', 'center'))
+                     method='lm',
+                     trControl = fitControl,
+                     preProc=c('scale', 'center'))
 lmfit.final
 
 # RMSE (linear)(treino) = 0.4822897

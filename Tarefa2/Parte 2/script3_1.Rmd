@@ -1,19 +1,30 @@
+---
+title: "script3_1"
+output: html_document
+---
 
-# script 3_1 tarefa 2
+## R Markdown
 
-#setwd('~/Desktop/Link to AD2/analytics2/Tarefa2')
-setwd('~/workspaces/analytics2/Tarefa2')
+### script 3_1 tarefa 2
 
-# --------------------------------------------------------------------------------------------------------------------
-#  1. Baixe os dados de treino e teste.
+```{r setwd, include=FALSE}
+setwd('~/Desktop/Link to AD2/analytics2/Tarefa2')
+#setwd('~/workspaces/analytics2/Tarefa2')
+```
 
+### --------------------------------------------------------------------------------------------------------------------
+###  1. Baixe os dados de treino e teste.
+
+```{r graduados.treino, include=FALSE}
 graduados.treino <- read.csv('Parte 3/graduados_treino_model2.csv', sep=' ')
+```
 
-# --------------------------------------------------------------------------------------------------------------------
-# 3. Usando todas as variáveis disponíveis (disciplinas do primeiro e segundo período), 
-#     use validação cruzada (nos dados de treino) para tunar um modelo de regressão
-#     Ridge.
+### --------------------------------------------------------------------------------------------------------------------
+### 3. Usando todas as variáveis disponíveis (disciplinas do primeiro e segundo período), 
+###     use validação cruzada (nos dados de treino) para tunar um modelo de regressão
+###     Ridge.
 
+```{r ridge, include=FALSE}
 library(ISLR)
 library(caret)
 library(dplyr)
@@ -36,7 +47,9 @@ adapted.graduados.treino <- graduados.treino %>%
 rownames(adapted.graduados.treino) <- adapted.graduados.treino$ALU_NOVAMATRICULA
 adapted.graduados.treino$ALU_NOVAMATRICULA <- NULL
 
+```
 
+```{r ridge}
 set.seed(825)
 fitControl <- trainControl(method = "cv",
                            number = 10)
@@ -53,7 +66,6 @@ ridge <- train(cra~., data = adapted.graduados.treino,
 ridge
 
 # lambda = 0.2154435
-
 
 graduados.teste <- read.csv('Parte 3/graduados_teste_model2.csv', sep=' ')
 
@@ -81,10 +93,12 @@ sqrt(mean(ridge.pred - adapted.graduados.teste$cra)^2)
 
 # RSME = 0.8564798
 
-# ----------------------------------------------------------------------------------------------------------------------
-# 4. Mesmo que o item acima mas usando um modelo de regressão Lasso.
+```
 
+### ----------------------------------------------------------------------------------------------------------------------
+### 4. Mesmo que o item acima mas usando um modelo de regressão Lasso.
 
+```{r lasso, include=FALSE}
 lasso <- train(cra ~., adapted.graduados.treino,
                method='lasso',
                preProc=c('scale','center'),
@@ -101,38 +115,43 @@ sqrt(mean(lasso.pred - adapted.graduados.teste$cra)^2)
 
 # RSME = 0.7695863
 
+```
+
+```{r lasso.ridge.plots, echo=FALSE}
 varImp(lasso)
 varImp(ridge)
 
 plot(varImp(lasso, scale = FALSE))
 plot(varImp(ridge, scale = FALSE))
+```
 
-# ---------------------------------------------------------------------------------------------------------------------
-# 5. Compare os três modelos nos dados de teste em termos de RMSE.
-# 
-#  RMSE (ridge) = 0.8564798
-#  RMSE (lasso) = 0.7695863
-# 
-#  Observa-se que a regressão utilizando o método de Ridge têm um erro maior que a
-#  regressão que utiliza o método de Lasso.
-
-
-# --------------------------------------------------------------------------------------------------------------------
-# 6. Quais as variáveis mais importantes segundo o modelo de regressão Lasso? 
-#    Alguma variável foi descartada? Quais?
-#
-#    Pelo plot acima, verifica-se que as variáveis mais importantes para o modelo
-#    são Teoria dos Grafos, Programação II e Laboratório de Programação II.
-#  
-#    As seguintes variáveis foram descartadas:
-#     . Cálculo.Diferencial.e.Integral.I
-#     . Programação.I
-#
+### ---------------------------------------------------------------------------------------------------------------------
+### 5. Compare os três modelos nos dados de teste em termos de RMSE.
+### 
+###  RMSE (ridge) = 0.8564798
+###  RMSE (lasso) = 0.7695863
+### 
+###  Observa-se que a regressão utilizando o método de Ridge têm um erro maior que a
+###  regressão que utiliza o método de Lasso.
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# 6.1 Treino com regressão linear com as variáveis mais importantes dos dados de treino
+### --------------------------------------------------------------------------------------------------------------------
+### 6. Quais as variáveis mais importantes segundo o modelo de regressão Lasso? 
+###    Alguma variável foi descartada? Quais?
+###
+###    Pelo plot acima, verifica-se que as variáveis mais importantes para o modelo
+###    são Teoria dos Grafos, Programação II e Laboratório de Programação II.
+###  
+###    As seguintes variáveis foram descartadas:
+###     . Cálculo.Diferencial.e.Integral.I
+###     . Programação.I
+###
 
+
+### ---------------------------------------------------------------------------------------------------------------------
+### 6.1 Treino com regressão linear com as variáveis mais importantes dos dados de treino
+
+```{r mais.importantes, include=FALSE }
 var.mais.importantes.treino <- graduados.treino %>%
   select(Programação.II, 
          Laboratório.de.Programação.II,
@@ -162,12 +181,17 @@ sqrt(mean(lmfit.pred - var.mais.importantes.teste$cra)^2)
 
 # RMSE (linear)(pred - teste) = 0.4647868
 
+```
+
+```{r plot.mais.importantes, echo=FALSE}
 plot(varImp(lmfit, scale = FALSE))
+```
 
-# --------------------------------------------------------------------------------------------------------------
-# 7. Re-treine o melhor modelo (dessa vez nos dados de treino sem validação cruzada) 
-#    e reporte o RMSE no teste.
+### --------------------------------------------------------------------------------------------------------------
+### 7. Re-treine o melhor modelo (dessa vez nos dados de treino sem validação cruzada) 
+###    e reporte o RMSE no teste.
 
+```{r lasso2}
 set.seed(825) # for reproducing these results
 lasso2 <- train(cra ~., adapted.graduados.treino,
                 method='lasso')
@@ -187,13 +211,14 @@ lasso2.pred <- predict(lasso2, adapted.graduados.teste)
 sqrt(mean(lasso2.pred - adapted.graduados.teste$cra)^2)
 # RSME = 0.2988228
 
-#   RMSE(lasso2) sem validação cruzada: 0.2988228
+# RMSE(lasso2) sem validação cruzada: 0.2988228
 
+```
 
+### -----------------------------------------------------------------------------------------------------------
+### 8. Use o modelo treinado em 6 e aplique nos dados de teste que vamos disponibilizar.
 
-# -----------------------------------------------------------------------------------------------------------
-# 8. Use o modelo treinado em 6 e aplique nos dados de teste que vamos disponibilizar.
-
+```{r novo.graduados.treino, include=FALSE }
 novo.graduados.treino <-read.csv('Parte 3/graduados_treino_2016.csv')
 head(novo.graduados.treino)
 
@@ -212,10 +237,12 @@ sqrt(mean(lmfit.pred - treino.mais.teste$cra)^2)
 
 # RMSE = 0.1728054
 
+```
 
-# ------------------------------------------------------------------------------------------------------------
-# 9. Crie novos atributos a partir dos existentes para tentar melhorar o seu modelo.
+### ------------------------------------------------------------------------------------------------------------
+### 9. Crie novos atributos a partir dos existentes para tentar melhorar o seu modelo.
 
+```{r novos.atributos, include=FALSE }
 novo.treino <- adapted.graduados.treino %>% 
   dplyr::select(-Fundamentos.de.Física.Clássica, -Leitura.e.Produção.de.Textos, -Cálculo.Diferencial.e.Integral.I) %>%
   dplyr::mutate(media_labs = (Laboratório.de.Programação.I + Laboratório.de.Programação.II)/2) %>%
@@ -247,26 +274,33 @@ sqrt(mean(novo.lasso.pred - novo.teste$cra)^2)
 # RSME = 0.4819051
 
 varImp(novo.lasso)
+plot(varImp(novo.lasso))
 
-# ----------------------------------------------------------------------------------------
-# 10. Gerar dados para subir para o kaggle
+```
 
+### ----------------------------------------------------------------------------------------
+### 10. Gerar dados para subir para o kaggle
 
-novo.graduados.teste <-read.csv('Parte 3/graduados_treino_2016.csv')
+```{r kaggle.data, include=FALSE }
+novo.graduados.teste <-read.csv('Parte 3/graduados_teste_2016.csv')
 head(novo.graduados.teste)
 nrow(novo.graduados.teste)
 
 rownames(novo.graduados.teste) <- novo.graduados.teste$matricula
 novo.graduados.teste$matricula <- NULL
 
-#novo.graduados.teste
+novo.graduados.teste
 
-treino.mais.teste2 <- rbind(adapted.graduados.teste, novo.graduados.teste)
-treino.mais.teste2 <- treino.mais.teste %>% tidyr::drop_na()
+#treino.mais.teste2 <- rbind(adapted.graduados.teste, novo.graduados.teste)
+#treino.mais.teste2 <- treino.mais.teste %>% tidyr::drop_na()
+for(i in 1:ncol(novo.graduados.teste)){
+  novo.graduados.teste[is.na(novo.graduados.teste[,i]), i] <- mean(novo.graduados.teste[,i], na.rm = TRUE)
+}
+          
 
 # Melhor modelo encontrado foi o linear: lmfit
 
-lmfit.final <- train(cra ~., data = treino.mais.teste2,
+lmfit.final <- train(cra ~., data = novo.graduados.teste,
                method='lm',
                trControl = fitControl,
                preProc=c('scale', 'center'))
@@ -288,15 +322,16 @@ treino.mais.teste2$matricula = rnames
 head(treino.mais.teste2)
 nrow(treino.mais.teste2)
 
-treino.mais.teste2 <- treino.mais.teste2 %>%
+treino.mais.teste2 <- treino.mais.teste2 %>% 
   group_by(matricula) %>%
   select(cra)
 
 head(treino.mais.teste2)
 nrow(treino.mais.teste2)
 
-setwd("~/Desktop/Link to AD2/analytics2/")
 write.table(treino.mais.teste2, "Tarefa2/Parte 3/treino_mais_teste2.csv")
 
 #colnames(treino.mais.teste2) = c("matricula", "cra")
 #head(treino.mais.teste2)
+
+```
