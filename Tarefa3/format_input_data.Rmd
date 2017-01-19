@@ -51,15 +51,22 @@ head(alunos.clean)
 
 
 ## Calcula CRA de alunos
-```{r}
-alunos.cra <- alunos.clean %>%
-  group_by(Matricula) %>%
-  mutate(cra.contrib = Media_Disciplina * Creditos) %>%
-  summarise(cra = sum(cra.contrib)/sum(Creditos))
-
-head(alunos.cra)
+#```{r}
+#alunos.cra <- alunos.clean %>%
+#  group_by(Matricula) %>%
+#  mutate(cra.contrib = Media_Disciplina * Creditos) %>%
+#  summarise(cra = sum(cra.contrib)/sum(Creditos))
+#head(alunos.cra)
 #View(alunos.cra)
+#```
+
+## Código de evasão
+```{r}
+alunos.cod_evasao <- alunos.clean %>%
+  select(Matricula, Cod_Evasao)
+head(alunos.cod_evasao)
 ```
+
 
 
 ## Organiza os dados de maneira que as disciplinas fiquem como colunas
@@ -74,18 +81,37 @@ alunos.model.input <- alunos.clean %>%
   select(Matricula,Nome_Disciplina,Media_Disciplina) %>% 
   mutate(Nome_Disciplina = as.factor(gsub(" ",".",Nome_Disciplina))) %>%
   dcast(Matricula ~ Nome_Disciplina, mean) %>%
-  merge(alunos.cra) %>%
-  ##filter(!is.na(graduados.cra))
-  drop_na()
+  merge(alunos.cod_evasao)
 
 head(alunos.model.input)
-View(alunos.model.input)
+#View(alunos.model.input)
 
 ```
 
+## Seleciona colunas (disciplinas) de primeiro e segundo períodos
+```{r}
+alunos.model.input2 <- alunos.model.input %>%
+  select(Matricula, 
+         ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA,
+         CALCULO.DIFERENCIAL.E.INTEGRAL.I,
+         CALCULO.DIFERENCIAL.E.INTEGRAL.II,
+         LEITURA.E.PRODUCAO.DE.TEXTOS,
+         MATEMÁTICA.DISCRETA,
+         PROGRAMAÇÃO.I,
+         PROGRAMAÇÃO.II,
+         INTRODUÇÃO.A.COMPUTAÇÃO,
+         LABORATÓRIO.DE.PROGRAMAÇÃO.I,
+         LABORATÓRIO.DE.PROGRAMAÇÃO.II,
+         TEORIA.DOS.GRAFOS,
+         Cod_Evasao)
+head(alunos.model.input2)
+View(alunos.model.input2)
+```
+
+
 ## Escreve dados limpos e organizados para arquivo .csv
 ```{r}
-write.table(graduados.model.input, 'Tarefa3/alunos_clean.csv')
+write.table(alunos.model.input2, 'alunos_model_input2.csv', row.names = FALSE, sep = ",")
 ```
 
 
