@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(readr)
 library(dplyr)
+library(ISLR)
+library(caret)
 
 setwd("~/Desktop/Link to AD2/analytics2/Tarefa3")
 ```
@@ -20,297 +22,164 @@ setwd("~/Desktop/Link to AD2/analytics2/Tarefa3")
 
 ## Importa dados limpos
 ```{r}
-alunos.input <- read.table("alunos_model_input2.csv", sep=",")
+alunos.input <- read.table("alunos_model_input2.csv", sep=",", header = TRUE)
+
+alunos.input <- alunos.input  %>%
+  mutate(Cod_Evasao = as.integer(Cod_Evasao))
 
 head(alunos.input)
-nrow(alunos.input)
+n <- nrow(alunos.input)
+```
+
+## Cria conjuntos de treino e de teste
+```{r}
+trainIndex <- sample(1:n, size = round(0.7*n), replace= FALSE)
+training <- alunos.input[ trainIndex, ]
+testing <- alunos.input[ -trainIndex, ]
+
+```
+
+## Regressão logística com validação cruzada
+```{r}
+ctrl <- trainControl(method = "repeatedcv", number = 10, savePredictions = TRUE)
+
+logistic_fit_1 <- train(Cod_Evasao ~ 
+                   ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
+                   CALCULO.DIFERENCIAL.E.INTEGRAL.I +
+                   CALCULO.DIFERENCIAL.E.INTEGRAL.II +
+                   LEITURA.E.PRODUCAO.DE.TEXTOS +
+                   MATEMÁTICA.DISCRETA +
+                   PROGRAMAÇÃO.I +
+                   PROGRAMAÇÃO.II +
+                   INTRODUÇÃO.A.COMPUTAÇÃO +
+                   LABORATÓRIO.DE.PROGRAMAÇÃO.I +
+                   LABORATÓRIO.DE.PROGRAMAÇÃO.II +
+                   TEORIA.DOS.GRAFOS,
+                 data = training,
+                 method = "glm",
+                 family = "binomial",
+                 trControl = ctrl, tuneLength = 5
+                 )
+
+exp(coef(logistic_fit_1$finalModel))
+
+predict(logistic_fit_1, newdata=testing)
+#predict(logistic_fit_1, newdata=testing, type="prob")
+
 ```
 
 
 # --------------------------------------------------------------------------------------------------------------------
 # 3. Usando todas as variáveis disponíveis (disciplinas do primeiro e segundo período), 
-#     use validação cruzada (nos dados de treino) para tunar um modelo de regressão
-#     Ridge.
+#     use validacao cruzada para tunar um modelo de regressão logística.
 
 ```{r}
-library(ISLR)
-library(caret)
-library(dplyr)
 
-adapted.graduados.treino <- graduados.treino %>%
-  select(Cálculo.Diferencial.e.Integral.I,
-           Álgebra.Vetorial.e.Geometria.Analítica,
-           Programação.I,
-           Introdução.à.Computação,
-           Leitura.e.Produção.de.Textos,
-           Laboratório.de.Programação.I,
-           Programação.II, 
-           Cálculo.Diferencial.e.Integral.II,
-           Matemática.Discreta,
-           Laboratório.de.Programação.II,
-           Teoria.dos.Grafos,
-           Fundamentos.de.Física.Clássica,
-           cra,
-           ALU_NOVAMATRICULA)
-rownames(adapted.graduados.treino) <- adapted.graduados.treino$ALU_NOVAMATRICULA
-adapted.graduados.treino$ALU_NOVAMATRICULA <- NULL
+logistic_fit <- glm(Cod_Evasao ~ 
+                   ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
+                   CALCULO.DIFERENCIAL.E.INTEGRAL.I +
+                   CALCULO.DIFERENCIAL.E.INTEGRAL.II +
+                   LEITURA.E.PRODUCAO.DE.TEXTOS +
+                   MATEMÁTICA.DISCRETA +
+                   PROGRAMAÇÃO.I +
+                   PROGRAMAÇÃO.II +
+                   INTRODUÇÃO.A.COMPUTAÇÃO +
+                   LABORATÓRIO.DE.PROGRAMAÇÃO.I +
+                   LABORATÓRIO.DE.PROGRAMAÇÃO.II +
+                   TEORIA.DOS.GRAFOS,
+                 data = training)
+
+summary(logistic_fit)
+#exp(coef(logistic_fit$finalModel))
+
+#predict(logistic_fit, newdata=testing)
+#predict(logistic_fit, newdata=testing, type="prob")
 
 ```
 
-
+## Importância de cada variável no modelo de regressão logística com validação cruzada
 ```{r}
-set.seed(825)
-fitControl <- trainControl(method = "cv",
-                           number = 10)
-# Set seq of lambda to test
-lambdaGrid <- expand.grid(lambda = 10^seq(10, -2, length=100))
+varImp(logistic_fit)
 
+```
+### Como podemos observar, as disciplinas de Teoria dos Grafos e Matemática Discreta 
+### têm baixa significância para o modelo final.
+
+
+## Teste da qualidade do modelo de regressão logística
+```{r}
+library(MKmisc)
+HLgof.test(fit = fitted(logistic_fit), obs = training$Cod_Evasao)
+
+library(ResourceSelection)
+hoslem.test(training$Cod_Evasao, fitted(logistic_fit), g=10)
+
+```
+### Segundo mostra o teste de Hosmer-Lemeshow, a hipótese nula é aceita, ou seja,
+### o modelo é um bom fit dos dados (p-valor > 0.05).
+
+
+## Árvores de Decisão
+```{r}
+library(rpart)
+
+decision_tree_fit <- rpart(Cod_Evasao ~ 
+               ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.I +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.II +
+               LEITURA.E.PRODUCAO.DE.TEXTOS +
+               MATEMÁTICA.DISCRETA +
+               PROGRAMAÇÃO.I +
+               PROGRAMAÇÃO.II +
+               INTRODUÇÃO.A.COMPUTAÇÃO +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.I +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.II +
+               TEORIA.DOS.GRAFOS,
+             data = training,
+             method="class")
+
+plotcp(decision_tree_fit)
+printcp(decision_tree_fit)
+summary(decision_tree_fit)
 ```
 
 
+
+## Florestas Randomicas
 ```{r}
-ridge <- train(cra~., data = adapted.graduados.treino,
-               method='ridge',
-               trControl = fitControl,
-               tuneGrid = lambdaGrid,
-               preProcess=c('center', 'scale')
-)
-ridge
+library(randomForest)
 
-# lambda = 0.2154435
+training <- training %>% 
+  mutate(Cod_Evasao = as.factor(Cod_Evasao))
 
-```
-
-
-```{r}
-
-graduados.teste <- read.csv('Parte 3/graduados_teste_model2.csv', sep=' ')
-
-adapted.graduados.teste <- graduados.teste %>%
-  select(Cálculo.Diferencial.e.Integral.I,
-         Álgebra.Vetorial.e.Geometria.Analítica,
-         Programação.I,
-         Introdução.à.Computação,
-         Leitura.e.Produção.de.Textos,
-         Laboratório.de.Programação.I,
-         Programação.II, 
-         Cálculo.Diferencial.e.Integral.II,
-         Matemática.Discreta,
-         Laboratório.de.Programação.II,
-         Teoria.dos.Grafos,
-         Fundamentos.de.Física.Clássica,
-         cra,
-         ALU_NOVAMATRICULA)
-rownames(adapted.graduados.teste) <- adapted.graduados.teste$ALU_NOVAMATRICULA
-adapted.graduados.teste$ALU_NOVAMATRICULA <- NULL
-
-ridge.pred <- predict(ridge, adapted.graduados.teste)
-
-sqrt(mean(ridge.pred - adapted.graduados.teste$cra)^2)
-
-# RSME = 0.8564798
-
-```
+rf_fit <- randomForest(Cod_Evasao ~ 
+               ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.I +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.II +
+               LEITURA.E.PRODUCAO.DE.TEXTOS +
+               MATEMÁTICA.DISCRETA +
+               PROGRAMAÇÃO.I +
+               PROGRAMAÇÃO.II +
+               INTRODUÇÃO.A.COMPUTAÇÃO +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.I +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.II +
+               TEORIA.DOS.GRAFOS,
+             data = training)
+print(rf_fit)
+importance(rf_fit)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
-# 4. Mesmo que o item acima mas usando um modelo de regressão Lasso.
-
-```{r}
-lasso <- train(cra ~., adapted.graduados.treino,
-               method='lasso',
-               preProc=c('scale','center'),
-               trControl=fitControl)
-lasso
-# lambda = 0.9
-
-```
-
-
-```{r}
-predict.enet(lasso$finalModel, type='coefficients', s=lasso$bestTune$fraction, 
-             mode='fraction')
-
-lasso.pred <- predict(lasso, adapted.graduados.teste)
-sqrt(mean(lasso.pred - adapted.graduados.teste$cra)^2)
-
-# RSME = 0.7695863
-
-```
-
-
-```{r}
-varImp(lasso)
-varImp(ridge)
-
-plot(varImp(lasso, scale = FALSE))
-plot(varImp(ridge, scale = FALSE))
-
-```
-
-
-# ---------------------------------------------------------------------------------------------------------------------
-# 5. Compare os três modelos nos dados de teste em termos de RMSE.
-
-```{r}
-# 
-#  RMSE (ridge) = 0.8564798
-#  RMSE (lasso) = 0.7695863
-# 
-#  Observa-se que a regressão utilizando o método de Ridge têm um erro maior que a
-#  regressão que utiliza o método de Lasso.
-
-```
-
-
-# --------------------------------------------------------------------------------------------------------------------
-# 6. Quais as variáveis mais importantes segundo o modelo de regressão Lasso? 
-#    Alguma variável foi descartada? Quais?
-
-```{r}
-#
-#    Pelo plot acima, verifica-se que as variáveis mais importantes para o modelo
-#    são Teoria dos Grafos, Programação II e Laboratório de Programação II.
-#  
-#    As seguintes variáveis foram descartadas:
-#     . Cálculo.Diferencial.e.Integral.I
-#     . Programação.I
-#
 
 ```
 
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# 6.1 Treino com regressão linear com as variáveis mais importantes dos dados de treino
-
+## Comparação dos modelos de regressão logística com validação cruzada (logistic_fit) e
 ```{r}
-var.mais.importantes.treino <- graduados.treino %>%
-  select(Programação.II, 
-         Laboratório.de.Programação.II,
-         Teoria.dos.Grafos,
-         cra)
-#rownames(var.mais.importantes) <- var.mais.importantes$ALU_NOVAMATRICULA
-
-lmfit <- train(cra ~., data = var.mais.importantes.treino,
-               method='lm',
-               trControl = fitControl,
-               preProc=c('scale', 'center'))
-lmfit
-
-# RMSE (linear)(treino) = 0.5247219
-# Rsquared (linear)(treino) = 0.6874748
-
-coef(lmfit$finalModel)
-
-var.mais.importantes.teste <- graduados.teste %>%
-  select(Programação.II, 
-         Laboratório.de.Programação.II,
-         Teoria.dos.Grafos,
-         cra)
-
-lmfit.pred <- predict(lmfit, var.mais.importantes.teste)
-sqrt(mean(lmfit.pred - var.mais.importantes.teste$cra)^2)
-
-# RMSE (linear)(pred - teste) = 0.4647868
-
-plot(varImp(lmfit, scale = FALSE))
 
 ```
 
 
-
-# --------------------------------------------------------------------------------------------------------------
-# 7. Re-treine o melhor modelo (dessa vez nos dados de treino sem validação cruzada) 
-#    e reporte o RMSE no teste.
-
-```{r}
-set.seed(825) # for reproducing these results
-lasso2 <- train(cra ~., adapted.graduados.treino,
-                method='lasso')
-lasso2
-# lambda encontrado: 0.5
-
-predict.enet(lasso2$finalModel, type='coefficients', s=lasso2$bestTune$fraction, 
-             mode='fraction')
-# eliminou:
-# Calculo I
-# Programação I
-# Lab Programacao I
-# Fund. de Fisica Classica
-# Calculo II
-
-lasso2.pred <- predict(lasso2, adapted.graduados.teste)
-sqrt(mean(lasso2.pred - adapted.graduados.teste$cra)^2)
-# RSME = 0.2988228
-
-#   RMSE(lasso2) sem validação cruzada: 0.2988228
-
-```
-
-
-# -----------------------------------------------------------------------------------------------------------
-# 8. Use o modelo treinado em 6 e aplique nos dados de teste que vamos disponibilizar.
-
-```{r}
-novo.graduados.treino <-read.csv('Parte 3/graduados_treino_2016.csv')
-head(novo.graduados.treino)
-
-rownames(novo.graduados.treino) <- novo.graduados.treino$matricula
-novo.graduados.treino$matricula <- NULL
-
-treino.mais.teste <- rbind(adapted.graduados.teste, novo.graduados.treino)
-
-treino.mais.teste <- treino.mais.teste %>% tidyr::drop_na()
-
-# Melhor modelo encontrado foi o linear: lmfit
-
-lmfit.pred <- predict(lmfit, treino.mais.teste)
-
-sqrt(mean(lmfit.pred - treino.mais.teste$cra)^2)
-
-# RMSE = 0.1728054
-
-```
-
-
-# ------------------------------------------------------------------------------------------------------------
-# 9. Crie novos atributos a partir dos existentes para tentar melhorar o seu modelo.
-
-```{r}
-novo.treino <- adapted.graduados.treino %>% 
-  dplyr::select(-Fundamentos.de.Física.Clássica, -Leitura.e.Produção.de.Textos, -Cálculo.Diferencial.e.Integral.I) %>%
-  dplyr::mutate(media_labs = (Laboratório.de.Programação.I + Laboratório.de.Programação.II)/2) %>%
-  dplyr::mutate(media_calc = (Cálculo.Diferencial.e.Integral.II + Álgebra.Vetorial.e.Geometria.Analítica)/2) %>%
-  dplyr::mutate(media_prog = (Programação.I + Programação.II)/2)
-
-
-novo.teste <- adapted.graduados.teste %>% 
-  dplyr::select(-Fundamentos.de.Física.Clássica, -Leitura.e.Produção.de.Textos, -Cálculo.Diferencial.e.Integral.I) %>%
-  dplyr::mutate(media_labs = (Laboratório.de.Programação.I + Laboratório.de.Programação.II)/2) %>%
-  dplyr::mutate(media_calc = (Cálculo.Diferencial.e.Integral.II + Álgebra.Vetorial.e.Geometria.Analítica)/2) %>%
-  dplyr::mutate(media_prog = (Programação.I + Programação.II)/2)
-
-
-novo.lasso <- train(cra ~., novo.treino,
-               method='lasso',
-               preProc=c('scale','center'),
-               trControl=fitControl)
-novo.lasso
-
-# lambda = 0.9
-
-predict.enet(novo.lasso$finalModel, type='coefficients', s=novo.lasso$bestTune$fraction, 
-             mode='fraction')
-
-novo.lasso.pred <- predict(novo.lasso, novo.teste)
-sqrt(mean(novo.lasso.pred - novo.teste$cra)^2)
-
-# RSME = 0.4819051
-
-varImp(novo.lasso)
-
-```
 
 
 

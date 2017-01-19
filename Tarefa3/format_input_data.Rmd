@@ -103,7 +103,10 @@ alunos.model.input2 <- alunos.model.input %>%
          LABORATÓRIO.DE.PROGRAMAÇÃO.I,
          LABORATÓRIO.DE.PROGRAMAÇÃO.II,
          TEORIA.DOS.GRAFOS,
-         Cod_Evasao)
+         Cod_Evasao) %>%
+  #filter(!is.na(Cod_Evasao))
+  drop_na()
+
 head(alunos.model.input2)
 View(alunos.model.input2)
 ```
