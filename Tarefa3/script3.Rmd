@@ -123,34 +123,60 @@ hoslem.test(training$Cod_Evasao, fitted(logistic_fit), g=10)
 ```{r}
 library(rpart)
 
-decision_tree_fit <- rpart(Cod_Evasao ~ 
-               ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
-               CALCULO.DIFERENCIAL.E.INTEGRAL.I +
-               CALCULO.DIFERENCIAL.E.INTEGRAL.II +
-               LEITURA.E.PRODUCAO.DE.TEXTOS +
-               MATEMÁTICA.DISCRETA +
-               PROGRAMAÇÃO.I +
-               PROGRAMAÇÃO.II +
-               INTRODUÇÃO.A.COMPUTAÇÃO +
-               LABORATÓRIO.DE.PROGRAMAÇÃO.I +
-               LABORATÓRIO.DE.PROGRAMAÇÃO.II +
-               TEORIA.DOS.GRAFOS,
-             data = training,
-             method="class")
+training_dtree <- training %>%
+  dplyr::select(-Matricula) %>% 
+  dplyr::mutate(Cod_Evasao = as.factor(Cod_Evasao)) %>% 
+  dplyr::rename(ic = INTRODUÇÃO.A.COMPUTAÇÃO) %>% 
+  dplyr::rename(prog1 = PROGRAMAÇÃO.I) %>% 
+  dplyr::rename(prog2 = PROGRAMAÇÃO.II) %>%
+  dplyr::rename(lab_p1 = LABORATÓRIO.DE.PROGRAMAÇÃO.I) %>% 
+  dplyr::rename(lab_p2 = LABORATÓRIO.DE.PROGRAMAÇÃO.II) %>% 
+  dplyr::rename(calc1 = CALCULO.DIFERENCIAL.E.INTEGRAL.I) %>% 
+  dplyr::rename(calc2 = CALCULO.DIFERENCIAL.E.INTEGRAL.II) %>% 
+  dplyr::rename(md = MATEMÁTICA.DISCRETA) %>% 
+  dplyr::rename(vetorial = ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA) %>% 
+  dplyr::rename(lpt = LEITURA.E.PRODUCAO.DE.TEXTOS) %>% 
+  dplyr::rename(grafos = TEORIA.DOS.GRAFOS)
 
-plotcp(decision_tree_fit)
-printcp(decision_tree_fit)
-summary(decision_tree_fit)
+View(training_dtree)
+summary(training_dtree$Cod_Evasao)
+
+#decision_tree_fit <- rpart(formula = Cod_Evasao ~ .,
+#             data = training_dtree,
+#             method="class",
+#             minsplit = 1, minbucket = 1, cp = 0.01)
+
+library(party)
+decision_tree_fit2 <- ctree(Cod_Evasao ~ .,
+                            data = training_dtree)
+decision_tree_fit2
+png(file = "decision_tree.png")
+plot(decision_tree_fit2, type= "simple",
+     inner_panel=node_inner(decision_tree_fit2,
+                            pval = FALSE,
+                            id = FALSE),
+     terminal_panel=node_terminal(decision_tree_fit2,
+                                  id=FALSE)
+     )
+dev.off()
+
+
+#plotcp(decision_tree_fit)
+#printcp(decision_tree_fit)
+#summary(decision_tree_fit)
 ```
 
 
 
-## Florestas Randomicas
+## Florestas Randômicas
 ```{r}
 library(randomForest)
 
 training <- training %>% 
   mutate(Cod_Evasao = as.factor(Cod_Evasao))
+
+# É preciso observar se existem NA's, pois florestas randômicas não funcionam com NA's
+summary(training$Cod_Evasao)
 
 rf_fit <- randomForest(Cod_Evasao ~ 
                ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
@@ -168,7 +194,11 @@ rf_fit <- randomForest(Cod_Evasao ~
 print(rf_fit)
 importance(rf_fit)
 
+```
 
+
+## Adaboost
+```{r}
 
 ```
 
