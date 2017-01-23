@@ -22,12 +22,14 @@ setwd("~/Desktop/Link to AD2/analytics2/Tarefa3")
 
 ## Importa dados limpos
 ```{r}
+set.seed(825)
+
 alunos.input <- read.table("alunos_model_input2.csv", sep=",", header = TRUE)
 
 alunos.input <- alunos.input  %>%
   mutate(Cod_Evasao = as.integer(Cod_Evasao))
 
-head(alunos.input)
+#head(alunos.input)
 n <- nrow(alunos.input)
 ```
 
@@ -54,7 +56,8 @@ logistic_fit_1 <- train(Cod_Evasao ~
                    INTRODUÇÃO.A.COMPUTAÇÃO +
                    LABORATÓRIO.DE.PROGRAMAÇÃO.I +
                    LABORATÓRIO.DE.PROGRAMAÇÃO.II +
-                   TEORIA.DOS.GRAFOS,
+                   TEORIA.DOS.GRAFOS +
+                   FUNDAMENTOS.DE.FÍSICA.CLÁSSICA,
                  data = training,
                  method = "glm",
                  family = "binomial",
@@ -63,7 +66,7 @@ logistic_fit_1 <- train(Cod_Evasao ~
 
 exp(coef(logistic_fit_1$finalModel))
 
-predict(logistic_fit_1, newdata=testing)
+#predict(logistic_fit_1, newdata=testing)
 #predict(logistic_fit_1, newdata=testing, type="prob")
 
 ```
@@ -86,7 +89,8 @@ logistic_fit <- glm(Cod_Evasao ~
                    INTRODUÇÃO.A.COMPUTAÇÃO +
                    LABORATÓRIO.DE.PROGRAMAÇÃO.I +
                    LABORATÓRIO.DE.PROGRAMAÇÃO.II +
-                   TEORIA.DOS.GRAFOS,
+                   TEORIA.DOS.GRAFOS +
+                   FUNDAMENTOS.DE.FÍSICA.CLÁSSICA,
                  data = training)
 
 summary(logistic_fit)
@@ -94,7 +98,6 @@ summary(logistic_fit)
 
 #predict(logistic_fit, newdata=testing)
 #predict(logistic_fit, newdata=testing, type="prob")
-
 ```
 
 ## Importância de cada variável no modelo de regressão logística com validação cruzada
@@ -102,8 +105,8 @@ summary(logistic_fit)
 varImp(logistic_fit)
 
 ```
-### Como podemos observar, as disciplinas de Teoria dos Grafos e Matemática Discreta 
-### têm baixa significância para o modelo final.
+###   Como podemos observar, a disciplina de Teoria dos Grafos têm muito baixa 
+### significância para o modelo final.
 
 
 ## Teste da qualidade do modelo de regressão logística
@@ -121,7 +124,7 @@ hoslem.test(training$Cod_Evasao, fitted(logistic_fit), g=10)
 
 ## Árvores de Decisão
 ```{r}
-library(rpart)
+library(party)
 
 training_dtree <- training %>%
   dplyr::select(-Matricula) %>% 
@@ -136,21 +139,16 @@ training_dtree <- training %>%
   dplyr::rename(md = MATEMÁTICA.DISCRETA) %>% 
   dplyr::rename(vetorial = ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA) %>% 
   dplyr::rename(lpt = LEITURA.E.PRODUCAO.DE.TEXTOS) %>% 
-  dplyr::rename(grafos = TEORIA.DOS.GRAFOS)
+  dplyr::rename(grafos = TEORIA.DOS.GRAFOS) %>% 
+  dplyr::rename(fisica_3 = FUNDAMENTOS.DE.FÍSICA.CLÁSSICA)
 
-View(training_dtree)
+#View(training_dtree)
 summary(training_dtree$Cod_Evasao)
 
-#decision_tree_fit <- rpart(formula = Cod_Evasao ~ .,
-#             data = training_dtree,
-#             method="class",
-#             minsplit = 1, minbucket = 1, cp = 0.01)
-
-library(party)
-decision_tree_fit2 <- ctree(Cod_Evasao ~ .,
+decision_tree_fit2 <- party::ctree(Cod_Evasao ~ .,
                             data = training_dtree)
 decision_tree_fit2
-png(file = "decision_tree.png")
+png(file = "decision_tree_party.png")
 plot(decision_tree_fit2, type= "simple",
      inner_panel=node_inner(decision_tree_fit2,
                             pval = FALSE,
@@ -161,16 +159,63 @@ plot(decision_tree_fit2, type= "simple",
 dev.off()
 
 
-#plotcp(decision_tree_fit)
-#printcp(decision_tree_fit)
-#summary(decision_tree_fit)
 ```
 
+### Testando a árvore de decisão obtida
+```{r}
+# testing_dtree <- testing %>%
+#   dplyr::select(-Matricula) %>% 
+#   dplyr::mutate(Cod_Evasao = as.factor(Cod_Evasao)) %>% 
+#   dplyr::rename(ic = INTRODUÇÃO.A.COMPUTAÇÃO) %>% 
+#   dplyr::rename(prog1 = PROGRAMAÇÃO.I) %>% 
+#   dplyr::rename(prog2 = PROGRAMAÇÃO.II) %>%
+#   dplyr::rename(lab_p1 = LABORATÓRIO.DE.PROGRAMAÇÃO.I) %>% 
+#   dplyr::rename(lab_p2 = LABORATÓRIO.DE.PROGRAMAÇÃO.II) %>% 
+#   dplyr::rename(calc1 = CALCULO.DIFERENCIAL.E.INTEGRAL.I) %>% 
+#   dplyr::rename(calc2 = CALCULO.DIFERENCIAL.E.INTEGRAL.II) %>% 
+#   dplyr::rename(md = MATEMÁTICA.DISCRETA) %>% 
+#   dplyr::rename(vetorial = ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA) %>% 
+#   dplyr::rename(lpt = LEITURA.E.PRODUCAO.DE.TEXTOS) %>% 
+#   dplyr::rename(grafos = TEORIA.DOS.GRAFOS) %>% 
+#   dplyr::rename(fisica_3 = FUNDAMENTOS.DE.FÍSICA.CLÁSSICA)
+
+#Predict(decision_tree_fit2, newdata = testing_dtree)
+
+table(Predict(decision_tree_fit2), training_dtree$Cod_Evasao)
+
+```
+###   Como se observa, uma árvore de decisão é criada, segundo um algoritmo interno
+### da biblioteca, mas para os dados usados temos que 446/8898 (~4.4% dos casos) que 
+### correspondem à evasão são classificados erroneamente (Falso Negativo) como casos de 
+### Não-Evasão. 
+###   Resultados similares se observa com a biblioteca rpart. O código segue abaixo.
+###   Observa-se também que Física 3 (Fundamentos de Física Clássica), tem uma grande
+### importância no modelo final, dado que está na raiz da árvore e tem um elevado grau
+### de pureza (resulta em nós folha).
+
+### Árvores de decisão com rpart
+```{r}
+library(rpart)
+
+set.seed(825)
+
+decision_tree_fit_rpart <- rpart(formula = Cod_Evasao ~ .,
+             data = training_dtree,
+             method="class",
+             minsplit = 1, minbucket = 1, cp = 0.01)
+
+
+#plotcp(decision_tree_fit_rpart)
+printcp(decision_tree_fit_rpart)
+summary(decision_tree_fit_rpart)
+```
 
 
 ## Florestas Randômicas
 ```{r}
 library(randomForest)
+
+set.seed(825)
 
 training <- training %>% 
   mutate(Cod_Evasao = as.factor(Cod_Evasao))
@@ -189,27 +234,112 @@ rf_fit <- randomForest(Cod_Evasao ~
                INTRODUÇÃO.A.COMPUTAÇÃO +
                LABORATÓRIO.DE.PROGRAMAÇÃO.I +
                LABORATÓRIO.DE.PROGRAMAÇÃO.II +
-               TEORIA.DOS.GRAFOS,
+               TEORIA.DOS.GRAFOS +
+               FUNDAMENTOS.DE.FÍSICA.CLÁSSICA,
              data = training)
 print(rf_fit)
 importance(rf_fit)
+varImpPlot(rf_fit)
 
 ```
+
+###   Como se observa na matriz de confusão gerada, nós temos uma taxa de erro 
+### estimada de 5.55%, que é um pouco menor que a taxa da árvore de decisão.
+###   Quanto a importância das variáveis no modelo, nós podemos observar que a variável
+### mais importante é fisica_3, da mesma forma que acontece na árvore de decisão gerada
+### anteriormente.
+###   A grande desvantagem de se usar florestas randômicas está no fato de que é um
+### método bastante custoso, com processamento demorado.
+
+### Random Forests with cforest
+```{r}
+training <- training %>% 
+  mutate(Cod_Evasao = as.factor(Cod_Evasao))
+
+rf_fit_party <- party::cforest(Cod_Evasao ~ 
+               ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.I +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.II +
+               LEITURA.E.PRODUCAO.DE.TEXTOS +
+               MATEMÁTICA.DISCRETA +
+               PROGRAMAÇÃO.I +
+               PROGRAMAÇÃO.II +
+               INTRODUÇÃO.A.COMPUTAÇÃO +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.I +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.II +
+               TEORIA.DOS.GRAFOS + 
+               FUNDAMENTOS.DE.FÍSICA.CLÁSSICA,
+             data = training)
+
+rf_fit_party
+varImp(rf_fit_party)
+
+
+#table(Predict(rf_fit_party), training$Cod_Evasao)
+
+#library(pROC)
+
+#prediction <- predict(rf_fit_party, testing$Cod_Evasao)
+#print(prediction)
+
+#auc <-roc(testing$Cod_Evasao, prediction)
+#print(auc)
+
+```
+###   Como se observa pela matriz de confusão gerada para analisar a floresta randômica,
+### nós temos um total de 452/8898 Falso Positivos (~5.0%).
+###   Para essa floresta randômica gerada, temos que lab_prog1 aparece em posição de 
+### maior importância e as demais variáveis são também importantes para o modelo.
+###   Nenhuma delas seria descartada em um primeiro momento.
+###   Pode se considerar o melhor modelo, dado que tem o menor erro dentre os modelos
+### criados até agora.
 
 
 ## Adaboost
 ```{r}
+library(adabag)
+library(fastAdaboost)
+
+#trainIndex <- sample(1:n, size = round(0.2*n), replace= FALSE)
+#training <- alunos.input[ trainIndex, ]
+#testing <- alunos.input[ -trainIndex, ]
+
+#nrow(training)
+
+ada <- adaboost(Cod_Evasao ~ 
+               ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.I +
+               CALCULO.DIFERENCIAL.E.INTEGRAL.II +
+               LEITURA.E.PRODUCAO.DE.TEXTOS +
+               MATEMÁTICA.DISCRETA +
+               PROGRAMAÇÃO.I +
+               PROGRAMAÇÃO.II +
+               INTRODUÇÃO.A.COMPUTAÇÃO +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.I +
+               LABORATÓRIO.DE.PROGRAMAÇÃO.II +
+               TEORIA.DOS.GRAFOS + 
+               FUNDAMENTOS.DE.FÍSICA.CLÁSSICA,
+             data = training,
+             nIter = 2)
+
+pred <- Predict(ada, newdata=testing)
+print(paste("Erro do Adaboost nos dados de teste: ", pred$error))
+
+#table(pred, training$Cod_Evasao)
+#print(table(pred, training$Cod_Evasao))
 
 ```
+###   Como podemos observar nos resultados acima, o adaboost tem um erro de ~5.5%,
+### o que o aproxima dos demais modelos criados e faz da floresta randômica gerada
+### com cforest o melhor modelo encontrado, com a menor taxa de erro.
 
 
-
-## Comparação dos modelos de regressão logística com validação cruzada (logistic_fit) e
-```{r}
-
-```
-
-
+## Referências
+### [Biblioteca party](https://cran.r-project.org/web/packages/party/vignettes/party.pdf)
+### [Biblioteca CART](http://www.statmethods.net/advstats/cart.html)
+### [Avaliação de modelos de regressão logística](https://www.r-bloggers.com/evaluating-logistic-regression-models/)
+### [Adaboost](https://cran.r-project.org/web/packages/adabag/adabag.pdf)
+### [fastAdaboost](https://cran.r-project.org/web/packages/fastAdaboost/README.html)
 
 
 

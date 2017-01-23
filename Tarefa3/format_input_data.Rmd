@@ -91,7 +91,7 @@ head(alunos.model.input)
 ## Seleciona colunas (disciplinas) de primeiro e segundo períodos
 ```{r}
 alunos.model.input2 <- alunos.model.input %>%
-  select(Matricula, 
+  dplyr::select(Matricula, 
          ÁLGEBRA.VETORIAL.E.GEOMETRIA.ANALÍTICA,
          CALCULO.DIFERENCIAL.E.INTEGRAL.I,
          CALCULO.DIFERENCIAL.E.INTEGRAL.II,
@@ -103,6 +103,7 @@ alunos.model.input2 <- alunos.model.input %>%
          LABORATÓRIO.DE.PROGRAMAÇÃO.I,
          LABORATÓRIO.DE.PROGRAMAÇÃO.II,
          TEORIA.DOS.GRAFOS,
+         FUNDAMENTOS.DE.FÍSICA.CLÁSSICA,
          Cod_Evasao) %>%
   #filter(!is.na(Cod_Evasao))
   drop_na()
